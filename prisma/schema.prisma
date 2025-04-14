@@ -1,29 +1,25 @@
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  email     String   @unique
-  name      String?
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
 }
 
 model Animal {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  name            String
-  scientificName  String
-  exhibit         String
-  location        String
-  funFact         String
+  id             String  @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  scientificName String?
+  exhibit        String?
+  location       String?
+  funFact        String?
+  imageUrl       String?
 }
 
 model Exhibit {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  exhibitName     String
-  description     String
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  exhibitName String
+  description String?
 }

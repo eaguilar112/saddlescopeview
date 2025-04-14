@@ -1,62 +1,10 @@
 'use server';
 
 import prisma from '@/lib/prisma';
+import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers'; 
 
-// READ actions
-export const getUsers = async () => {
-  try {
-    const users = await prisma.user.findMany({
-      include: {
-        posts: true,
-        _count: {
-          select: { comments: true, posts: true }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
-    
-    return users;
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    throw new Error('Failed to fetch users');
-  }
-}
-
-export const getUserById = async (id) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id },
-      include: {
-        posts: {
-          orderBy: {
-            createdAt: 'desc'
-          }
-        },
-        comments: {
-          orderBy: {
-            createdAt: 'desc'
-          },
-          take: 10
-        },
-        _count: {
-          select: { comments: true, posts: true }
-        },
-      }
-    });
-    
-    if (!user) {
-      throw new Error('User not found');
-    }
-    
-    return user;
-  } catch (error) {
-    console.error(`Error fetching user with ID ${id}:`, error);
-    throw error;
-  }
-}
-
+// Fetch all animals from the database
 export const getAnimals = async () => {
   try {
     const animals = await prisma.animal.findMany();
@@ -65,49 +13,31 @@ export const getAnimals = async () => {
     console.error('Error fetching animals:', error);
     return [];
   }
-}
+};
 
+// Fetch all exhibits from the database
 export const getExhibits = async () => {
-    try {
-      const exhibits = await prisma.exhibit.findMany();
-      return exhibits;
-    } catch (error) {
-      console.error('Error fetching exhibits:', error);
-      return [];
-    }
-  }
-
-// CREATE actions
-export const createUser = async ({ email, name }) => {
-  if (!email) {
-    throw new Error('Email is required');
-  }
-  
   try {
-    const user = await prisma.user.create({
-      data: {
-        email,
-        name,
-      },
-    });
-    
-    revalidatePath('/');
-    
-    return user;
+    const exhibits = await prisma.exhibit.findMany();
+    return exhibits;
   } catch (error) {
-    if (error.code === 'P2002') {
-      throw new Error('A user with this email already exists');
-    }
-    
-    throw new Error('Failed to create user');
+    console.error('Error fetching exhibits:', error);
+    return [];
   }
-}
+};
 
-export const createAnimal = async ({ name, scientificName, exhibit, location, funFact }) => {
+// Create a new animal entry in the database
+export const createAnimal = async ({
+  name,
+  scientificName,
+  exhibit,
+  location,
+  funFact,
+  imageUrl,
+}) => {
   if (!name) {
     throw new Error('Name is required');
   }
-  
   try {
     const animal = await prisma.animal.create({
       data: {
@@ -115,55 +45,97 @@ export const createAnimal = async ({ name, scientificName, exhibit, location, fu
         scientificName,
         exhibit,
         location,
-        funFact
+        funFact,
+        imageUrl,
       },
     });
-    
     return animal;
   } catch (error) {
     console.error('Error creating animal:', error);
     throw error;
   }
-}
+};
 
+// Create a new exhibit entry in the database
 export const createExhibit = async ({ exhibitName, description }) => {
-    if (!exhibitName) {
-        throw new Error('Name is required');
-      }
-
-    try {
-      const exhibit = await prisma.exhibit.create({
-        data: {
-          exhibitName,
-          description
-        },
-      });
-      
-      return exhibit;
-    } catch (error) {
-      console.error('Error creating exhibit:', error);
-      throw error;
-    }
+  if (!exhibitName) {
+    throw new Error('Exhibit name is required');
   }
+  try {
+    const exhibit = await prisma.exhibit.create({
+      data: {
+        exhibitName,
+        description,
+      },
+    });
+    return exhibit;
+  } catch (error) {
+    console.error('Error creating exhibit:', error);
+    throw error;
+  }
+};
 
-// Search functions
+// Update an existing animal entry in the database
+export const updateAnimal = async ({
+  id,
+  name,
+  scientificName,
+  exhibit,
+  location,
+  funFact,
+  imageUrl,
+}) => {
+  try {
+    const animal = await prisma.animal.update({
+      where: { id },
+      data: {
+        name,
+        scientificName,
+        exhibit,
+        location,
+        funFact,
+        imageUrl,
+      },
+    });
+    return animal;
+  } catch (error) {
+    console.error('Error updating animal:', error);
+    throw error;
+  }
+};
+
+// Delete an animal entry from the database
+export const deleteAnimal = async (id) => {
+  try {
+    const deleted = await prisma.animal.delete({
+      where: { id },
+    });
+    return deleted;
+  } catch (error) {
+    console.error('Error deleting animal:', error);
+    throw error;
+  }
+};
+
+// Search for animals by name
 export const getAnimalsByName = async (search) => {
-    try {
-      const animals = await prisma.animal.findMany({
-        where: {
-          name: {
-            contains: search,
-            mode: 'insensitive',
-          },
+  try {
+    const animals = await prisma.animal.findMany({
+      where: {
+        name: {
+          contains: search,
+          mode: 'insensitive',
         },
-      });
-      return animals;
-    } catch (error) {
-      console.error('Search error:', error);
-      return [];
-    }
-  };
+      },
+    });
+    return animals;
+  } catch (error) {
+    console.error('Search error:', error);
+    return [];
+  }
+};
 
+// Search for exhibits by name
 export const getExhibitsByName = async (search) => {
   try {
     const exhibits = await prisma.exhibit.findMany({
@@ -180,4 +152,30 @@ export const getExhibitsByName = async (search) => {
     return [];
   }
 };
-  
+
+// Admin login: validates credentials and sets a cookie
+export async function adminLogin({ username, password }) {
+  if (
+    username === process.env.ADMIN_USER &&
+    password === process.env.ADMIN_PASS
+  ) {
+    cookies().set('admin-auth', 'true', {
+      path: '/',
+      httpOnly: true,
+      maxAge: 60 * 60, // 1 hour
+    });
+    return { success: true };
+  }
+  return { success: false, error: 'Invalid credentials' };
+}
+
+// Check if the current user is an admin
+export async function isAdmin() {
+  const adminCookie = cookies().get('admin-auth');
+  return adminCookie?.value === 'true';
+}
+
+// Admin logout: deletes the admin-auth cookie
+export async function adminLogout() {
+  cookies().delete('admin-auth');
+}
