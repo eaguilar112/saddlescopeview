@@ -1,38 +1,31 @@
+'use client';
+
 import { useState } from 'react';
 
-export default function SearchBar({ onSearch, initialSearch = '' }) {
-  const [search, setSearch] = useState(initialSearch);
-  const [previousSearch, setPreviousSearch] = useState('');
+export default function SearchBar({ onSearch }) {
+  const [search, setSearch] = useState('');
 
-  const handleSearch = async (e) => {
+  const handleSearch = (e) => {
     e.preventDefault();
-
-    if (search.trim() === '') {
-      onSearch('');
-      return;
-    }
-
-    if (search === previousSearch) {
-      return;
-    }
-
-    setPreviousSearch(search);
-    onSearch(search);
+    onSearch(search.trim());
   };
 
   return (
-    <form onSubmit={handleSearch} className="mt-20 mb-6">
-      <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
+    <form onSubmit={handleSearch} className="mb-6">
+      <label
+        htmlFor="search"
+        className="block text-sm font-medium text-gray-700 mb-2"
+      >
         Search
       </label>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
           id="search"
           type="text"
-          placeholder="Enter..."
+          placeholder="Type a name..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border border-gray-300 rounded-lg p-2 flex-grow focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="border border-gray-300 text-black rounded-lg p-2 flex-grow focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
         <button
           type="submit"
