@@ -17,7 +17,7 @@ export default function ExhibitList({ initialExhibits }) {
           {exhibits.map((exhibit) => (
             <li key={exhibit.id} className="p-4 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
               <h3 className="text-lg font-semibold text-gray-800">{exhibit.exhibitName}</h3>
-              <p className="text-sm text-gray-500 italic">Description: {exhibit.description}</p>
+              <p className="text-sm text-gray-500 italic">Scientific Name: {exhibit.description}</p>
             </li>
           ))}
         </ul>

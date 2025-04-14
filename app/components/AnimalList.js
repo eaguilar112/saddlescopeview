@@ -1,34 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { getAnimalsByName } from '@/app/actions';
 
 export default function AnimalList({ initialAnimals }) {
   const [animals, setAnimals] = useState(initialAnimals || []);
-
-  const handleSearch = async (searchQuery) => {
-    if (searchQuery === '') {
-      setAnimals(initialAnimals || []);
-      return;
-    }
-
-    const results = await getAnimalsByName(searchQuery);
-    setAnimals(results || []);
-  };
 
   // Optionally, use useEffect to reset animals when initialAnimals change
   useEffect(() => {
     setAnimals(initialAnimals || []);
   }, [initialAnimals]);
-
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      const refreshed = await getAnimalsByName(''); 
-      setAnimals(refreshed || []);
-    }, 5000); 
-  
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-md">
